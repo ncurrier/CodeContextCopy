@@ -1,6 +1,17 @@
-# Requires -RunAsAdministrator
+# Self-elevate the script if required
+if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
+    Write-Host "Requesting administrative privileges..." -ForegroundColor Yellow
+    $CommandLine = "-File `"" + $MyInvocation.MyCommand.Path + "`" " + $MyInvocation.UnboundArguments
+    Start-Process -FilePath PowerShell.exe -Verb RunAs -ArgumentList $CommandLine
+    exit
+}
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+# Add required assemblies
+Add-Type -AssemblyName Microsoft.VisualBasic
+Add-Type -AssemblyName System.Windows.Forms
 
 <#
 .SYNOPSIS
@@ -36,7 +47,6 @@ param (
 # --------------------------
 # 1. Prompt for Max File Size
 # --------------------------
-Add-Type -AssemblyName Microsoft.VisualBasic
 $inputMsg = "Enter the maximum file size (in KB) to include (Default: 1000 KB):"
 $maxSizeKBString = [Microsoft.VisualBasic.Interaction]::InputBox($inputMsg, "Max File Size", "1000")
 

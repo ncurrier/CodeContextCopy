@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Self-elevation capabilities to Install.ps1 and Remove.ps1
+- Automatic administrative privilege requests
+- Improved error handling in installation scripts
+- Added Windows Forms assembly for clipboard operations
+
+### Changed
+- Updated README with comprehensive documentation
+- Improved installation and removal process
+- Enhanced script documentation and comments
+- Fixed clipboard operations in CopyDirContentsWithSecurity.ps1
+
+### Fixed
+- Clipboard access issues in CopyDirContentsWithSecurity.ps1
+- Administrative privileges handling across all scripts
+
 ## [1.0.0] - 2025-01-17
 
 ### Added
