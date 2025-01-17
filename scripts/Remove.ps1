@@ -1,12 +1,16 @@
+# Import module for Test-IsAdmin function
+$scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$rootDirectory = Split-Path -Parent $scriptDirectory
+$modulePath = Join-Path $rootDirectory "output\Copy-DirectoryContent.ps1"
+Import-Module $modulePath -Force
+
 # Self-elevate the script if required
-if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
+if (-Not (Test-IsAdmin)) {
     Write-Host "Requesting administrative privileges..." -ForegroundColor Yellow
     $CommandLine = "-File `"" + $MyInvocation.MyCommand.Path + "`" " + $MyInvocation.UnboundArguments
     Start-Process -FilePath PowerShell.exe -Verb RunAs -ArgumentList $CommandLine
     exit
 }
-
-# Requires -RunAsAdministrator
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
@@ -27,31 +31,16 @@ Set-StrictMode -Version Latest
 #>
 
 try {
-    # Get the root directory (parent of scripts)
-    $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
-    $rootPath = Split-Path -Parent $scriptPath
-    $regFile = Join-Path $rootPath "config\RemoveContextMenu.reg"
+    # Registry key for the context menu
+    $regKeyPath = "HKCU:\Software\Classes\Directory\shell\Copy Directory Contents"
 
-    # Verify file exists
-    if (-not (Test-Path $regFile)) {
-        Write-Host "Error: Registry file not found at: $regFile" -ForegroundColor Red
-        exit 1
-    }
-
-    # Remove the registry entries
-    try {
+    # Remove the registry keys if they exist
+    if (Test-Path $regKeyPath) {
         Write-Host "Removing context menu entry..." -ForegroundColor Cyan
-        $process = Start-Process "reg.exe" -ArgumentList "import `"$regFile`"" -Wait -PassThru
-        if ($process.ExitCode -ne 0) {
-            throw "Registry import failed with exit code: $($process.ExitCode)"
-        }
-
-        Write-Host "`nUninstallation successful!" -ForegroundColor Green
-        Write-Host "The 'Copy Directory Contents' context menu entry has been removed." -ForegroundColor Green
-    }
-    catch {
-        Write-Host "Error removing context menu entry: $($_.Exception.Message)" -ForegroundColor Red
-        exit 1
+        Remove-Item -Path $regKeyPath -Recurse -Force
+        Write-Host "Context menu entry removed successfully." -ForegroundColor Green
+    } else {
+        Write-Host "Context menu entry not found. Nothing to remove." -ForegroundColor Yellow
     }
 } catch {
     Write-Host "Error removing context menu entry: $($_.Exception.Message)" -ForegroundColor Red

@@ -1,31 +1,22 @@
 @{
-    ModuleVersion = '1.1.0'
-    GUID = 'f8b0e1b5-7c1d-4c4f-9e1a-9b9b8b1b1b1b'
+    ModuleVersion = '1.2.0'
+    GUID = '12345678-1234-5678-1234-567812345678'
     Author = 'Nathaniel Currier'
     CompanyName = 'nat.io'
-    Copyright = '(c) 2025 nat.io. All rights reserved.'
-    Description = 'Windows Explorer context menu utility for copying directory contents to clipboard with LLM token estimation and context optimization'
+    Copyright = '(c) 2025 Nathaniel Currier. All rights reserved.'
+    Description = 'A Windows Explorer context menu utility for copying directory contents to clipboard with LLM token estimation and context optimization.'
     PowerShellVersion = '5.1'
-    FunctionsToExport = @('Copy-DirectoryContents')
+    RootModule = 'Copy-DirectoryContent.ps1'
+    FunctionsToExport = @('Copy-DirectoryContent', 'Test-IsAdmin')
     CmdletsToExport = @()
     VariablesToExport = '*'
     AliasesToExport = @()
     PrivateData = @{
         PSData = @{
-            Tags = @(
-                'Windows',
-                'Explorer',
-                'Clipboard',
-                'Security',
-                'LLM',
-                'GPT',
-                'AI',
-                'Context-Window',
-                'Token-Estimation',
-                'Code-Context'
-            )
+            Tags = @('Windows', 'Explorer', 'Context-Menu', 'Clipboard', 'LLM', 'AI')
             LicenseUri = 'https://github.com/ncurrier/CodeContextCopy/blob/main/LICENSE'
             ProjectUri = 'https://github.com/ncurrier/CodeContextCopy'
+            ReleaseNotes = 'Added user prompts, improved file handling, enhanced error tracking, and better organization'
         }
     }
 }

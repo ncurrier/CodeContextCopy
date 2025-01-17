@@ -69,21 +69,19 @@ def generate_pangram():
 
 ```
 CodeContextCopy/
-├── src/                    # Source code
+├── docs/                  # Documentation files
+├── scripts/              # PowerShell scripts
+│   ├── Install.ps1       # Installation script
+│   ├── Remove.ps1        # Removal script
+│   └── build.ps1         # Build and deployment script
+├── src/                  # Source code
 │   ├── CodeContextCopy.psd1       # Module manifest
 │   └── CopyDirContentsWithSecurity.ps1  # Main script
-├── scripts/                # Installation scripts
-│   ├── Install.ps1        # Installation script
-│   └── Remove.ps1         # Uninstallation script
 ├── config/                # Configuration files
 │   ├── AddContextMenu.reg    # Registry entries for context menu
 │   └── RemoveContextMenu.reg # Registry cleanup
-├── docs/                  # Documentation
-│   ├── README.md         # This file
-│   └── CHANGELOG.md      # Version history
-├── tests/                 # Test files
-│   └── Copy-DirectoryContents.Tests.ps1
-└── build.ps1             # Build and deployment script
+└── tests/                 # Test files
+    └── Copy-DirectoryContents.Tests.ps1
 ```
 
 ## Installation
@@ -95,7 +93,7 @@ CodeContextCopy/
 
 2. Run the installation script:
    ```powershell
-   .\build.ps1 -Task Install
+   .\scripts\build.ps1 -Task Install
    ```
 
 ## Usage
@@ -115,24 +113,24 @@ CodeContextCopy/
 - PowerShell 5.1 or later
 - Administrator privileges (for installation only)
 
-### Build and Test
-```powershell
-# Run all tests
-.\build.ps1 -Task Test
-
-# Build the module
-.\build.ps1 -Task Build
-
-# Install the module
-.\build.ps1 -Task Install
-
-# Uninstall the module
-.\build.ps1 -Task Uninstall
-```
-
 ### Running Tests
 ```powershell
-Invoke-Pester .\tests
+.\scripts\build.ps1 -Task Test
+```
+
+### Building
+```powershell
+.\scripts\build.ps1 -Task Build
+```
+
+### Installing Locally
+```powershell
+.\scripts\build.ps1 -Task Install
+```
+
+### Uninstalling
+```powershell
+.\scripts\build.ps1 -Task Uninstall
 ```
 
 ## Contributing

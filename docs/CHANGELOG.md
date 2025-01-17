@@ -5,9 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0] - 2025-01-18
 
 ### Added
+- User prompts for maximum file size and dotfile inclusion
+- Improved file encoding handling with Get-Content
+- Enhanced error tracking for encoding issues
+- Progress display during file processing
+- Detailed error messages for file access issues
 - Self-elevation capabilities to Install.ps1 and Remove.ps1
 - Automatic administrative privilege requests
 - Improved error handling in installation scripts
@@ -26,6 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Made admin privileges optional for copying operations
 - Improved user interaction with clear prompts
 - Enhanced completion dialog with detailed statistics
+- Simplified statistics output for better readability
+- Improved file content reading with better encoding support
+- Enhanced error handling for file operations
+- Updated file processing to handle empty directories
+- Optimized array handling for better performance
+- Moved all scripts to /scripts directory for better organization
 
 ### Fixed
 - Clipboard access issues in CopyDirContentsWithSecurity.ps1
@@ -34,6 +45,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multiple clipboard method support for better reliability
 - Window closing too quickly
 - Directory path parameter handling
+- File encoding errors with UTF8 files
+- Missing property errors in statistics tracking
+- Progress counter accuracy
+- Empty directory handling
+- Error messages for inaccessible files
 
 ## [1.1.0] - 2025-01-17
 

@@ -20,9 +20,10 @@ $outputPath = Join-Path $PSScriptRoot 'output'
 # Task functions
 function Build-Module {
     # Create output directory
-    if (-not (Test-Path $outputPath)) {
-        New-Item -ItemType Directory -Path $outputPath | Out-Null
+    if (Test-Path $outputPath) {
+        Remove-Item -Path $outputPath -Recurse -Force
     }
+    New-Item -ItemType Directory -Path $outputPath | Out-Null
 
     # Run PSScriptAnalyzer
     $analysis = Invoke-ScriptAnalyzer -Path $srcPath -Recurse
@@ -31,15 +32,35 @@ function Build-Module {
         $analysis | Format-Table -AutoSize
     }
 
-    # Copy files to output
-    Copy-Item -Path "$srcPath\*" -Destination $outputPath -Recurse -Force
+    # Copy only the necessary files to output
+    $filesToCopy = @(
+        'Copy-DirectoryContent.ps1',
+        'CodeContextCopy.psd1'
+    )
+
+    foreach ($file in $filesToCopy) {
+        $sourcePath = Join-Path $srcPath $file
+        if (Test-Path $sourcePath) {
+            Copy-Item -Path $sourcePath -Destination $outputPath
+        } else {
+            Write-Warning "Source file not found: $sourcePath"
+        }
+    }
 }
 
 function Test-Module {
     $config = New-PesterConfiguration
     $config.Run.Path = $testsPath
+    $config.Run.PassThru = $true
     $config.Output.Verbosity = 'Detailed'
-    Invoke-Pester -Configuration $config
+    
+    Write-Host "Running tests..." -ForegroundColor Cyan
+    $results = Invoke-Pester -Configuration $config
+
+    if ($results.FailedCount -gt 0) {
+        Write-Host "Tests failed!" -ForegroundColor Red
+        exit 1
+    }
 }
 
 function Install-Module {

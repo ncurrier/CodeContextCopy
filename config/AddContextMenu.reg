@@ -1,8 +1,0 @@
-Windows Registry Editor Version 5.00
-
-[HKEY_CLASSES_ROOT\Directory\shell\Copy Directory Contents]
-@="Copy Directory Contents"
-"Icon"="powershell.exe"
-
-[HKEY_CLASSES_ROOT\Directory\shell\Copy Directory Contents\command]
-@="powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"& 'SCRIPT_PATH' -DirectoryPath '%1'\""
