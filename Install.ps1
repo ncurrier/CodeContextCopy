@@ -1,4 +1,14 @@
-# Requires -RunAsAdministrator
+# Self-elevate the script if required
+if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
+    Write-Host "Requesting administrative privileges..." -ForegroundColor Yellow
+    $CommandLine = "-File `"" + $MyInvocation.MyCommand.Path + "`" " + $MyInvocation.UnboundArguments
+    Start-Process -FilePath PowerShell.exe -Verb RunAs -ArgumentList $CommandLine
+    exit
+}
+
+# Enable strict mode for better error handling
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
 
 <#
 .SYNOPSIS
@@ -12,13 +22,9 @@
 
 .NOTES
     - Requires administrative privileges
-    - Creates registry entries under HKEY_CLASSES_ROOT
+    - Modifies the Windows Registry
     - Will overwrite existing entries if they exist
 #>
-
-# Enable strict mode for better error handling
-Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
 
 try {
     # Get the directory of this script

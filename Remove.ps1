@@ -1,3 +1,14 @@
+# Self-elevate the script if required
+if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
+    Write-Host "Requesting administrative privileges..." -ForegroundColor Yellow
+    $CommandLine = "-File `"" + $MyInvocation.MyCommand.Path + "`" " + $MyInvocation.UnboundArguments
+    Start-Process -FilePath PowerShell.exe -Verb RunAs -ArgumentList $CommandLine
+    exit
+}
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+
 <#
 .SYNOPSIS
     Removes the "Copy Directory Contents to Clipboard" context menu entry.
@@ -12,10 +23,6 @@
     - Modifies the Windows Registry
     - Safe to run multiple times (idempotent)
 #>
-
-# Requires -RunAsAdministrator
-Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
 
 try {
     # Registry key for the context menu (using PSDrive to ensure proper access)
