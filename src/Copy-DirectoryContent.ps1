@@ -40,7 +40,6 @@ function Get-TokenEstimate {
         Estimated number of tokens.
     #>
     param ([string]$Text)
-    
     try {
         # Simple estimation: 1 token per 4 characters
         return [math]::Ceiling($Text.Length / 4)
@@ -64,7 +63,6 @@ function Format-FileSize {
         The formatted size string (e.g., "1.5 MB").
     #>
     param ([long]$Size)
-    
     if ($Size -ge 1GB) {
         return "{0:N2} GB" -f ($Size / 1GB)
     } elseif ($Size -ge 1MB) {
@@ -77,6 +75,17 @@ function Format-FileSize {
 }
 
 function Test-IsBinaryFile {
+    <#
+    .SYNOPSIS
+        Tests if a file is binary by checking its extension and content.
+
+    .PARAMETER FilePath
+        The path to the file to test.
+
+    .OUTPUTS
+        System.Boolean
+        Returns $true if the file is binary, $false otherwise.
+    #>
     param (
         [Parameter(Mandatory=$true)]
         [string]$FilePath
@@ -90,21 +99,19 @@ function Test-IsBinaryFile {
         '.jpeg', '.gif', '.bmp', '.ico', '.pdf', '.doc', '.docx', '.xls',
         '.xlsx', '.ppt', '.pptx'
     )
-    
     if ($binaryExtensions -contains $extension) { return $true }
 
     # Check file content
     $maxBytesToCheck = 512
     $buffer = New-Object Byte[] $maxBytesToCheck
-    
     try {
         $fs = [System.IO.File]::OpenRead($FilePath)
         try {
             $bytesRead = $fs.Read($buffer, 0, $buffer.Length)
             $countNonText = 0
             for ($i = 0; $i -lt $bytesRead; $i++) {
-                if ($buffer[$i] -lt 32 -and $buffer[$i] -notin 9,10,13) { 
-                    $countNonText++ 
+                if ($buffer[$i] -lt 32 -and $buffer[$i] -notin 9,10,13) {
+                    $countNonText++
                 }
             }
             return ($countNonText / $bytesRead -gt 0.1)
@@ -115,164 +122,110 @@ function Test-IsBinaryFile {
         }
     }
     catch {
-        Write-Information "Warning: Could not check if binary: $FilePath" -InformationAction Continue
+        Write-Warning "Could not check if binary: $FilePath"
         return $true
     }
+}
+
+function MaskSensitiveData {
+    <#
+    .SYNOPSIS
+        Masks sensitive data in text content.
+
+    .PARAMETER Text
+        The text content to mask sensitive data in.
+
+    .OUTPUTS
+        System.String
+        The text content with sensitive data masked.
+    #>
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]$Text
+    )
+
+    $patterns = @(
+        # API Keys and Tokens
+        '(?i)(api[_-]?key|token|secret)["\s]*[:=]\s*["]*([^"\s]+)["]*',
+        # Passwords
+        '(?i)(password|passwd|pwd)["\s]*[:=]\s*["]*([^"\s]+)["]*',
+        # AWS Keys
+        '(?i)(aws[_-]?access[_-]?key[_-]?id|aws[_-]?secret[_-]?access[_-]?key)["\s]*[:=]\s*["]*([^"\s]+)["]*',
+        # Database URLs
+        '(?i)(jdbc:|\w+://)([^:]+):([^@]+)@',
+        # Email addresses
+        '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+    )
+
+    $maskedText = $Text
+    foreach ($pattern in $patterns) {
+        $maskedText = $maskedText -replace $pattern, '$1=<REDACTED>'
+    }
+
+    return $maskedText
 }
 
 function Copy-DirectoryContent {
     <#
     .SYNOPSIS
-    Copies the contents of a directory to the clipboard with LLM token estimation.
+        Copies the contents of a directory to the clipboard with advanced filtering.
 
     .DESCRIPTION
-    This function copies the contents of a directory to the clipboard, while estimating
-    the number of LLM tokens that would be used. It can filter out binary files,
-    large files, and provides options for handling dotfiles.
+        This function copies the contents of a directory to the clipboard, while providing
+        options for filtering files based on size and type. It can exclude binary files,
+        large files, and provides options for handling dotfiles. The function also masks
+        sensitive data and estimates token usage.
 
     .PARAMETER Path
-    The path to the directory to copy.
+        The path to the directory to copy.
 
     .PARAMETER MaxSizeKB
-    The maximum file size in KB to include in the copy. Default is 1000 KB.
+        The maximum file size in KB to include in the copy. Default is 1000 KB.
 
     .PARAMETER IncludeDotfiles
-    Whether to include dotfiles in the copy. Default is true.
+        Whether to include dotfiles in the copy. Default is true.
 
     .EXAMPLE
-    Copy-DirectoryContent -Path "C:\MyProject" -MaxSizeKB 500 -IncludeDotfiles $false
+        Copy-DirectoryContent -Path "C:\MyProject" -MaxSizeKB 500 -IncludeDotfiles $false
+        Copies files from C:\MyProject, excluding files larger than 500KB and dotfiles.
 
     .NOTES
-    Author: Nathaniel Currier
-    Copyright: (c) 2025 Nathaniel Currier
-    License: MIT
+        Author: Nathaniel Currier
+        Copyright: (c) 2025 Nathaniel Currier
+        License: MIT
     #>
     param (
         [Parameter(Mandatory=$true)]
         [string]$Path,
-
         [Parameter(Mandatory=$false)]
         [int]$MaxSizeKB = 1000,
-
         [Parameter(Mandatory=$false)]
         [bool]$IncludeDotfiles = $true
     )
 
-    # If parameters aren't provided, prompt for them
-    if (-not $PSBoundParameters.ContainsKey('MaxSizeKB')) {
-        $result = [Microsoft.VisualBasic.Interaction]::InputBox(
-            "Enter maximum file size in KB (default: 1000):", 
-            "Max File Size",
-            "1000"
-        )
-        if ([string]::IsNullOrEmpty($result)) { return }
-        $MaxSizeKB = [int]$result
-    }
-
-    if (-not $PSBoundParameters.ContainsKey('IncludeDotfiles')) {
-        $result = [System.Windows.Forms.MessageBox]::Show(
-            "Include dotfiles and hidden files?",
-            "Include Dotfiles",
-            [System.Windows.Forms.MessageBoxButtons]::YesNo,
-            [System.Windows.Forms.MessageBoxIcon]::Question
-        )
-        $IncludeDotfiles = $result -eq [System.Windows.Forms.DialogResult]::Yes
-    }
-
-    Write-Verbose "Directory path: $Path"
-    Write-Verbose "Processing started for directory:`n$Path"
-    Write-Verbose "Maximum file size: $MaxSizeKB KB"
-    Write-Verbose "Including dotfiles: $IncludeDotfiles"
-
-    # If running in ISE or other host, open console window
-    if (-not $Host.Name -like "*ConsoleHost*") {
-        Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"& { . '$($MyInvocation.MyCommand.Definition)' '$Path'; Pause }`"" -NoNewWindow
-        return
-    }
-
     # Initialize statistics
     $stats = @{
+        StartTime = Get-Date
+        EndTime = $null
         TotalFiles = 0
         ProcessedFiles = 0
         SkippedFiles = 0
         OversizedFiles = 0
         BinaryFiles = 0
         DotFiles = 0
-        TotalSize = 0
-        TokenEstimate = 0
-        StartTime = Get-Date
         EncodingErrors = 0
-    }
-
-    # Ignore patterns
-    $ignorePatterns = @(
-        "node_modules", "build", "out", "dist", "coverage", "bin", "obj",
-        ".git", ".idea", ".vscode", ".vs", "vendor", "*.env", "*.log",
-        "*.tmp", ".DS_Store", ".gitignore", "Thumbs.db", "*.exe", "*.dll",
-        "*.pdb", "*.zip", "*.rar", "*.7z", "*.tar", "*.gz", "*.iso",
-        "*.bin", "*.dat", "*.db", "*.sqlite", "*.mdf", "*.bak", "*.cache"
-    )
-
-    # Add dotfile patterns if not including dotfiles
-    if (-not $IncludeDotfiles) {
-        $ignorePatterns += @(
-            ".*",              # Any file/directory starting with a dot
-            ".config",         # Configuration directories
-            ".settings",       # Settings directories
-            ".env*",          # Environment files
-            ".editorconfig",  # Editor configuration
-            ".prettierrc*",   # Prettier configuration
-            ".eslintrc*",     # ESLint configuration
-            ".babelrc*",      # Babel configuration
-            ".npmrc",         # NPM configuration
-            ".yarnrc",        # Yarn configuration
-            ".dockerignore",  # Docker ignore file
-            ".gitlab-ci*",    # GitLab CI configuration
-            ".travis*",       # Travis CI configuration
-            ".circleci*",     # Circle CI configuration
-            ".github"         # GitHub configuration directory
-        )
-    }
-
-    # Sensitive data patterns
-    function MaskSensitiveData {
-        param (
-            [Parameter(Mandatory=$true)]
-            [string]$Text
-        )
-
-        $patterns = @(
-            # API Keys and Tokens
-            '(?i)(api[_-]?key|token|secret)["\s]*[:=]\s*["]*([^"\s]+)["]*',
-            # Passwords
-            '(?i)(password|passwd|pwd)["\s]*[:=]\s*["]*([^"\s]+)["]*',
-            # AWS Keys
-            '(?i)(aws[_-]?access[_-]?key[_-]?id|aws[_-]?secret[_-]?access[_-]?key)["\s]*[:=]\s*["]*([^"\s]+)["]*',
-            # Database URLs
-            '(?i)(jdbc:|\w+://)([^:]+):([^@]+)@',
-            # Email addresses
-            '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
-        )
-
-        $maskedText = $Text
-        foreach ($pattern in $patterns) {
-            $maskedText = $maskedText -replace $pattern, '$1=<REDACTED>'
-        }
-
-        return $maskedText
-    }
-
-    # Validate directory
-    if (-not (Test-Path $Path -PathType Container)) {
-        Write-Error "'$Path' is not a valid directory."
-        return
+        TotalSize = 0
     }
 
     # Process files
+    $content = ""
     try {
         $files = Get-ChildItem -Path $Path -File -Recurse -ErrorAction Stop | Sort-Object FullName
         $stats.TotalFiles = $files.Count
-        $content = ""  # Initialize content string
+        if ($stats.TotalFiles -eq 0) {
+            Write-Warning "No files found in directory."
+            return
+        }
 
         foreach ($file in $files) {
             Write-Progress -Activity "Processing Files" -Status $file.Name -PercentComplete (($stats.ProcessedFiles / $stats.TotalFiles) * 100)
@@ -305,61 +258,54 @@ function Copy-DirectoryContent {
             try {
                 $fileContent = Get-Content -Path $file.FullName -Raw -ErrorAction Stop
                 if ($null -eq $fileContent) { $fileContent = "" }
-                $fileContent = MaskSensitiveData $fileContent
+                # Only mask content if it's not already marked as redacted
+                if (-not $fileContent.Contains("<REDACTED>")) {
+                    $fileContent = MaskSensitiveData $fileContent
+                }
                 $relativePath = $file.FullName.Substring($Path.Length + 1)
-                $content += "`nFile: $relativePath`n$fileContent`n"
+                $delimiter = "=" * 80
+                $content += "`n$delimiter`nFile: $($file.FullName)`nRelative Path: $relativePath`n$delimiter`n$fileContent`n"
             }
             catch {
-                Write-Information "Error reading file: $($file.FullName)" -InformationAction Continue
+                Write-Warning "Error reading file: $($file.FullName)"
                 $stats.EncodingErrors++
                 $stats.SkippedFiles++
                 continue
             }
         }
         Write-Progress -Activity "Processing Files" -Completed
-        return $content
     }
     catch {
         Write-Error "Error accessing directory: $($_.Exception.Message)"
-        return $content
-    }
-
-    # Copy to clipboard
-    try {
-        if ([string]::IsNullOrEmpty($content)) {
-            Write-Information "No content to copy to clipboard." -InformationAction Continue
-            return
-        }
-
-        # Try Windows Forms clipboard first
-        try {
-            [System.Windows.Forms.Clipboard]::SetText($content)
-        }
-        catch {
-            Write-Information "Primary clipboard method failed, trying alternative..." -InformationAction Continue
-            
-            # Try WPF clipboard
-            try {
-                [System.Windows.Clipboard]::SetText($content)
-            }
-            catch {
-                # Final fallback to Set-Clipboard
-                Set-Clipboard -Value $content -ErrorAction Stop
-            }
-        }
-    }
-    catch {
-        Write-Error "Error copying to clipboard: $($_.Exception.Message)"
         return
     }
 
-    # Calculate final statistics
-    $stats.EndTime = Get-Date
-    $processingTime = $stats.EndTime - $stats.StartTime
-    $estimatedTokens = Get-TokenEstimate $content
+    # Copy to clipboard if we have content
+    if (-not [string]::IsNullOrWhiteSpace($content)) {
+        try {
+            # Try Windows Forms clipboard first
+            try {
+                [System.Windows.Forms.Clipboard]::SetText($content)
+            }
+            catch {
+                Write-Warning "Primary clipboard method failed, trying alternative..."
+                # Try WPF clipboard
+                try {
+                    [System.Windows.Clipboard]::SetText($content)
+                }
+                catch {
+                    # Final fallback to Set-Clipboard
+                    Set-Clipboard -Value $content -ErrorAction Stop
+                }
+            }
 
-    # Show completion message with detailed statistics
-    $message = @"
+            # Calculate final statistics
+            $stats.EndTime = Get-Date
+            $processingTime = $stats.EndTime - $stats.StartTime
+            $estimatedTokens = Get-TokenEstimate $content
+
+            # Show completion message with detailed statistics
+            $message = @"
 Operation completed successfully!
 
 Directory: $Path
@@ -388,13 +334,21 @@ Content has been copied to clipboard.
 Test by pasting in your desired location.
 "@
 
-    [Microsoft.VisualBasic.Interaction]::MsgBox(
-        $message,
-        [Microsoft.VisualBasic.MsgBoxStyle]::Information,
-        "Operation Complete"
-    )
-
-    return $content
+            # Display message box
+            $null = [Microsoft.VisualBasic.Interaction]::MsgBox(
+                $message,
+                [Microsoft.VisualBasic.MsgBoxStyle]::Information,
+                "Operation Complete"
+            )
+        }
+        catch {
+            Write-Error "Error copying to clipboard: $($_.Exception.Message)"
+            return
+        }
+    }
+    else {
+        Write-Warning "No content to copy to clipboard."
+    }
 }
 
 # Only export when being imported as a module
