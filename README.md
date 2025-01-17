@@ -82,7 +82,7 @@ $sensitivePatterns = @(
     '(?i)(password\s*[:=]\s*\S+)',           
     '(?i)(api[-_]?key\s*[:=]\s*\S+)',        
     '(?i)(secret\s*[:=]\s*\S+)',             
-    '(?i)(token\s*[:=]\s*\S+)',              
+    '(?i)(token\s*[:=]\s*\S+)',　　 　 　 　
     '(?i)(private[-_]?key\s*[:=]\s*\S+)',    
     '(?i)(aws_access_key_id\s*=\s*\S+)',     
     '(?i)(aws_secret_access_key\s*=\s*\S+)', 
@@ -228,3 +228,93 @@ catch {
     Write-Host "Failed to copy to clipboard."
     Write-Host $_.Exception.Message
 }
+
+# Code Context Copy
+
+A Windows Explorer context menu utility that securely copies directory contents to the clipboard, with built-in security features and progress tracking.
+
+## Features
+
+- Copy directory contents to clipboard via context menu
+- Built-in sensitive data masking (passwords, API keys, tokens)
+- Real-time progress tracking with visual feedback
+- Smart binary file detection and filtering
+- Configurable file size limits
+- UTF-8 encoding support
+- Efficient file processing
+- Administrative privileges protection
+
+## Installation
+
+1. Clone this repository or download the files
+2. Right-click `Install.ps1` and select "Run with PowerShell"
+   - Note: Administrative privileges are required
+   - If you get a security warning, you may need to run:
+     ```powershell
+     Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+     ```
+
+## Usage
+
+1. Right-click on any directory in Windows Explorer
+2. Select "Copy Directory Contents to Clipboard"
+3. Enter maximum file size when prompted (default: 1000 KB)
+4. Wait for processing to complete
+5. Contents are now in your clipboard!
+
+## Security Features
+
+- Automatic detection and masking of sensitive data:
+  - Passwords
+  - API keys
+  - Tokens
+  - Connection strings
+  - Private keys
+  - AWS credentials
+- Binary file detection and exclusion
+- Size limit enforcement
+- Secure clipboard handling
+
+## Excluded Content
+
+The following are automatically excluded:
+- Binary files
+- System directories (.git, node_modules, etc.)
+- Files exceeding size limit
+- Common ignored files (.env, .log, etc.)
+- Files with encoding issues
+
+## Uninstallation
+
+1. Right-click `Remove.ps1` and select "Run with PowerShell"
+   - Note: Administrative privileges are required
+
+## Requirements
+
+- Windows 10 or later
+- PowerShell 5.1 or later
+- Administrative privileges (for installation/uninstallation)
+
+## Development
+
+- Main branch: Production-ready code
+- Develop branch: Integration branch
+- Feature branches: feature/
+- Bug fix branches: bugfix/
+- Hotfix branches: hotfix/
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'feat: Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Version History
+
+See [CHANGELOG.md](CHANGELOG.md) for version history.
