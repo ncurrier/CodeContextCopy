@@ -1,0 +1,28 @@
+# Windows system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Windows shortcuts
+*.lnk
+
+# PowerShell
+*.ps1.test
+*.ps1.bak
+
+# VS Code
+.vscode/
+.vs/
+*.code-workspace
+
+# Temp files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Logs
+*.log
+logs/

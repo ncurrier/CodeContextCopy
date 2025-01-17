@@ -1,0 +1,33 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.0] - 2025-01-17
+
+### Added
+- Initial release
+- Install.ps1: Script to install context menu entry
+- Remove.ps1: Script to remove context menu entry
+- CopyDirContentsWithSecurity.ps1: Main script for copying directory contents
+- Added strict mode and error handling
+- Added admin privilege checks
+- Added progress bar for file processing
+- Added UTF-8 encoding support
+- Added comprehensive binary file detection
+- Added sensitive data masking
+- Added proper registry access handling
+
+### Security
+- Added admin requirement checks
+- Improved sensitive data pattern matching
+- Added secure clipboard handling
+- Added proper error handling and resource cleanup
+
+### Documentation
+- Added comprehensive documentation
+- Added .gitignore file
+- Added .clinerules for coding standards
+- Added CHANGELOG.md for version tracking
