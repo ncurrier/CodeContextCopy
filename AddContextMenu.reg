@@ -1,7 +1,0 @@
-Windows Registry Editor Version 5.00
-
-[HKEY_CLASSES_ROOT\Directory\shell\Copy Directory Contents]
-@="Copy Directory Contents to Clipboard"
-
-[HKEY_CLASSES_ROOT\Directory\shell\Copy Directory Contents\command]
-@="powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Utilities\CodeContextCopy\CopyDirContentsWithSecurity.ps1" "%1""

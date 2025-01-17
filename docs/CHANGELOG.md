@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved error handling in installation scripts
 - Added Windows Forms assembly for clipboard operations
 - Added WPF clipboard support as fallback method
+- Added dotfile filtering option
+- Added pause at script completion
+- Added more detailed progress messages
 
 ### Changed
 - Updated README with comprehensive documentation
@@ -20,12 +23,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced script documentation and comments
 - Fixed clipboard operations in CopyDirContentsWithSecurity.ps1
 - Improved argument passing during self-elevation
+- Made admin privileges optional for copying operations
+- Improved user interaction with clear prompts
+- Enhanced completion dialog with detailed statistics
 
 ### Fixed
 - Clipboard access issues in CopyDirContentsWithSecurity.ps1
 - Administrative privileges handling across all scripts
 - Self-elevation argument passing
 - Multiple clipboard method support for better reliability
+- Window closing too quickly
+- Directory path parameter handling
+
+## [1.1.0] - 2025-01-17
+
+### Added
+- Token estimation for LLM compatibility
+- Detailed file and size statistics
+- Processing time tracking
+- Cost estimation based on GPT-4 pricing
+- Project restructuring for better organization
+- Build script with automated tasks
+- Unit tests with Pester
+- Module manifest for PowerShell Gallery compatibility
+
+### Changed
+- Improved project structure with dedicated directories
+- Enhanced installation scripts for new structure
+- Updated documentation with LLM-specific information
+- Improved completion dialog with detailed statistics
+- Registry files moved to config directory
+- Scripts updated to use relative paths
+
+### Fixed
+- Installation script paths for new structure
+- Registry file template placeholders
+- Documentation organization
+- Window closing behavior
+- Directory path handling
 
 ## [1.0.0] - 2025-01-17
 
