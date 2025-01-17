@@ -12,16 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic administrative privilege requests
 - Improved error handling in installation scripts
 - Added Windows Forms assembly for clipboard operations
+- Added WPF clipboard support as fallback method
 
 ### Changed
 - Updated README with comprehensive documentation
 - Improved installation and removal process
 - Enhanced script documentation and comments
 - Fixed clipboard operations in CopyDirContentsWithSecurity.ps1
+- Improved argument passing during self-elevation
 
 ### Fixed
 - Clipboard access issues in CopyDirContentsWithSecurity.ps1
 - Administrative privileges handling across all scripts
+- Self-elevation argument passing
+- Multiple clipboard method support for better reliability
 
 ## [1.0.0] - 2025-01-17
 

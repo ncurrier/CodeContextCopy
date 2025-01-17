@@ -1,7 +1,7 @@
 # Self-elevate the script if required
 if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
     Write-Host "Requesting administrative privileges..." -ForegroundColor Yellow
-    $CommandLine = "-File `"" + $MyInvocation.MyCommand.Path + "`" " + $MyInvocation.UnboundArguments
+    $CommandLine = "-NoProfile -ExecutionPolicy Bypass -File `"$($MyInvocation.MyCommand.Path)`" `"$DirectoryPath`""
     Start-Process -FilePath PowerShell.exe -Verb RunAs -ArgumentList $CommandLine
     exit
 }
@@ -12,6 +12,7 @@ $ErrorActionPreference = "Stop"
 # Add required assemblies
 Add-Type -AssemblyName Microsoft.VisualBasic
 Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName PresentationCore,PresentationFramework
 
 <#
 .SYNOPSIS
@@ -230,21 +231,34 @@ try {
         exit 0
     }
 
-    [System.Windows.Forms.Clipboard]::SetText($content)
-    Write-Host "`nContents successfully copied to clipboard." -ForegroundColor Green
+    # Try Windows Forms clipboard first
+    try {
+        [System.Windows.Forms.Clipboard]::SetText($content)
+        Write-Host "`nContents successfully copied to clipboard." -ForegroundColor Green
+    }
+    catch {
+        Write-Host "Primary clipboard method failed, trying alternative..." -ForegroundColor Yellow
+        
+        # Try WPF clipboard
+        try {
+            [System.Windows.Clipboard]::SetText($content)
+            Write-Host "`nContents copied to clipboard (WPF method)." -ForegroundColor Green
+        }
+        catch {
+            # Final fallback to Set-Clipboard
+            try {
+                Set-Clipboard -Value $content -ErrorAction Stop
+                Write-Host "`nContents copied to clipboard (PowerShell method)." -ForegroundColor Green
+            }
+            catch {
+                throw "All clipboard methods failed. Last error: $($_.Exception.Message)"
+            }
+        }
+    }
 }
 catch {
     Write-Host "Error copying to clipboard: $($_.Exception.Message)" -ForegroundColor Red
-    
-    # Fallback method
-    try {
-        Set-Clipboard -Value $content -ErrorAction Stop
-        Write-Host "`nContents copied to clipboard (fallback method)." -ForegroundColor Green
-    }
-    catch {
-        Write-Host "Failed to copy using fallback method: $($_.Exception.Message)" -ForegroundColor Red
-        exit 1
-    }
+    exit 1
 }
 
 Write-Host "Processing complete." -ForegroundColor Yellow
