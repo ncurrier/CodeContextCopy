@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-01-18
+
+### Added
+- Enhanced sensitive data masking with comprehensive patterns
+- Improved binary file detection with extension and content checks
+- Added Test-IsBinaryFile function for better file type detection
+- Added more robust sensitive data pattern matching
+
+### Changed
+- Updated file content processing to properly handle and format output
+- Fixed dotfile filtering parameter handling
+- Improved code organization and readability
+- Enhanced sensitive data masking patterns
+- Updated module version and release notes
+
+### Fixed
+- File content not being properly returned in output
+- Inconsistent dotfile handling
+- Binary file detection issues
+- Sensitive data masking inconsistencies
+- File path formatting in output
+
 ## [1.2.0] - 2025-01-18
 
 ### Added

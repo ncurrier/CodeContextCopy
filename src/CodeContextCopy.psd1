@@ -1,5 +1,5 @@
 @{
-    ModuleVersion = '1.2.0'
+    ModuleVersion = '1.3.0'
     GUID = '12345678-1234-5678-1234-567812345678'
     Author = 'Nathaniel Currier'
     CompanyName = 'nat.io'
@@ -16,7 +16,7 @@
             Tags = @('Windows', 'Explorer', 'Context-Menu', 'Clipboard', 'LLM', 'AI')
             LicenseUri = 'https://github.com/ncurrier/CodeContextCopy/blob/main/LICENSE'
             ProjectUri = 'https://github.com/ncurrier/CodeContextCopy'
-            ReleaseNotes = 'Added user prompts, improved file handling, enhanced error tracking, and better organization'
+            ReleaseNotes = 'Improved file content handling, enhanced sensitive data masking, better binary file detection, and fixed dotfile handling'
         }
     }
 }
