@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved code organization and readability
 - Enhanced sensitive data masking patterns
 - Updated module version and release notes
+- Changed build output from /output to /bin directory
+- Improved build script organization for source and script files
 
 ### Fixed
 - File content not being properly returned in output
@@ -26,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Binary file detection issues
 - Sensitive data masking inconsistencies
 - File path formatting in output
+- Build script file organization and output location
 
 ## [1.2.0] - 2025-01-18
 
