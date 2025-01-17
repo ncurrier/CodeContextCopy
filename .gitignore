@@ -30,3 +30,4 @@ logs/
 build/
 # Build output
 /bin/
+/output/
