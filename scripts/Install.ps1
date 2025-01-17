@@ -5,7 +5,7 @@ $ErrorActionPreference = "Stop"
 # Import module for Test-IsAdmin function
 $scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $rootDirectory = Split-Path -Parent $scriptDirectory
-$modulePath = Join-Path $rootDirectory "output\Copy-DirectoryContent.ps1"
+$modulePath = Join-Path $rootDirectory "bin\Copy-DirectoryContent.ps1"
 Import-Module $modulePath -Force
 
 # Self-elevate the script if required
@@ -39,7 +39,7 @@ try {
     # Get the directory of this script
     $scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Definition
     $rootDirectory = Split-Path -Parent $scriptDirectory
-    $modulePath = Join-Path $rootDirectory "output\Copy-DirectoryContent.ps1"
+    $modulePath = Join-Path $rootDirectory "bin\Copy-DirectoryContent.ps1"
     $iconPath = Join-Path $rootDirectory "assets\folder_icon_with_arrow.ico"
 
     # Check if the script exists
