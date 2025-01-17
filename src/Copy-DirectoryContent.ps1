@@ -269,43 +269,45 @@ function Copy-DirectoryContent {
     }
 
     # Process files
-    $content = ""
     try {
-        $files = @(Get-ChildItem -Path $Path -Recurse -File -ErrorAction Stop)
+        $files = Get-ChildItem -Path $Path -File -Recurse -ErrorAction Stop | Sort-Object FullName
         $stats.TotalFiles = $files.Count
-        Write-Verbose "Found $($stats.TotalFiles) files to process..."
-        if ($stats.TotalFiles -eq 0) {
-            Write-Information "No files found in directory." -InformationAction Continue
-            return $content
-        }
+        $content = ""  # Initialize content string
+
         foreach ($file in $files) {
+            Write-Progress -Activity "Processing Files" -Status $file.Name -PercentComplete (($stats.ProcessedFiles / $stats.TotalFiles) * 100)
             $stats.ProcessedFiles++
-            $percentComplete = [math]::Round(($stats.ProcessedFiles / $stats.TotalFiles) * 100)
-            Write-Progress -Activity "Processing Files" -Status "Checking file $($stats.ProcessedFiles + 1) of $($stats.TotalFiles)" -PercentComplete $percentComplete
-            $stats.TotalSize += $file.Length
-            # Skip dotfiles if not included
-            if (-not $IncludeDotfiles -and $file.Name.StartsWith('.')) {
+
+            # Check if it's a dotfile
+            if ($file.Name.StartsWith('.')) {
                 $stats.DotFiles++
+                if (-not $IncludeDotfiles) {
+                    $stats.SkippedFiles++
+                    continue
+                }
+            }
+
+            # Check file size
+            $stats.TotalSize += $file.Length
+            if ($file.Length -gt ($MaxSizeKB * 1KB)) {
+                $stats.OversizedFiles++
                 $stats.SkippedFiles++
                 continue
             }
-            # Skip binary files
-            if (Test-IsBinaryFile $file.FullName) {
+
+            # Check if binary
+            if (Test-IsBinaryFile -FilePath $file.FullName) {
                 $stats.BinaryFiles++
                 $stats.SkippedFiles++
                 continue
             }
-            if ($file.Length -gt ($MaxSizeKB * 1KB)) {
-                Write-Information "Skipping large file: $($file.Name) ($([math]::Round($file.Length / 1KB, 2)) KB)" -InformationAction Continue
-                $stats.SkippedFiles++
-                continue
-            }
+
             try {
                 $fileContent = Get-Content -Path $file.FullName -Raw -ErrorAction Stop
                 if ($null -eq $fileContent) { $fileContent = "" }
                 $fileContent = MaskSensitiveData $fileContent
                 $relativePath = $file.FullName.Substring($Path.Length + 1)
-                $content += "`nFile: $relativePath`n$fileContent"
+                $content += "`nFile: $relativePath`n$fileContent`n"
             }
             catch {
                 Write-Information "Error reading file: $($file.FullName)" -InformationAction Continue
