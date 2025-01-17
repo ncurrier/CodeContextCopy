@@ -49,13 +49,13 @@ database_url=mysql://user:pass@localhost/db
     }
 
     It "Should respect dotfile filtering" {
-        $result = Copy-DirectoryContent -Path $testDir -ExcludeDotFiles
+        $result = Copy-DirectoryContent -Path $testDir -IncludeDotfiles $false
         $result | Should -Not -Match "config content"
         $result | Should -Not -Match "secret=123"
     }
 
     It "Should include dotfiles when not excluded" {
-        $result = Copy-DirectoryContent -Path $testDir
+        $result = Copy-DirectoryContent -Path $testDir -IncludeDotfiles $true
         $result | Should -Match "config content"
     }
 

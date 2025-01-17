@@ -30,8 +30,7 @@ function Get-TokenEstimate {
         Estimates the number of tokens in a text string.
 
     .DESCRIPTION
-        Provides a rough approximation of GPT tokens based on character count,
-        newlines, special characters, and numbers.
+        Provides a rough approximation of GPT tokens based on character count.
 
     .PARAMETER Text
         The text to estimate tokens for.
@@ -42,14 +41,14 @@ function Get-TokenEstimate {
     #>
     param ([string]$Text)
     
-    $charCount = $Text.Length
-    $newlineCount = ($Text | Select-String -Pattern "`n" -AllMatches).Matches.Count
-    $specialCharCount = ($Text | Select-String -Pattern "[^a-zA-Z0-9\s]" -AllMatches).Matches.Count
-    $numberCount = ($Text | Select-String -Pattern "\d+" -AllMatches).Matches.Count
-    
-    # Base estimation: characters/4 + newlines + special chars + numbers
-    $estimatedTokens = [math]::Ceiling($charCount / 4) + $newlineCount + ($specialCharCount * 0.5) + $numberCount
-    return [int]$estimatedTokens
+    try {
+        # Simple estimation: 1 token per 4 characters
+        return [math]::Ceiling($Text.Length / 4)
+    }
+    catch {
+        Write-Warning "Error estimating tokens: $($_.Exception.Message)"
+        return 0
+    }
 }
 
 function Format-FileSize {
@@ -77,39 +76,77 @@ function Format-FileSize {
     }
 }
 
+function Test-IsBinaryFile {
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]$FilePath
+    )
+
+    # Check extension first (faster)
+    $extension = [System.IO.Path]::GetExtension($FilePath).ToLower()
+    $binaryExtensions = @(
+        '.exe', '.dll', '.pdb', '.zip', '.rar', '.7z', '.tar', '.gz', '.iso',
+        '.bin', '.dat', '.db', '.sqlite', '.mdf', '.bak', '.png', '.jpg',
+        '.jpeg', '.gif', '.bmp', '.ico', '.pdf', '.doc', '.docx', '.xls',
+        '.xlsx', '.ppt', '.pptx'
+    )
+    
+    if ($binaryExtensions -contains $extension) { return $true }
+
+    # Check file content
+    $maxBytesToCheck = 512
+    $buffer = New-Object Byte[] $maxBytesToCheck
+    
+    try {
+        $fs = [System.IO.File]::OpenRead($FilePath)
+        try {
+            $bytesRead = $fs.Read($buffer, 0, $buffer.Length)
+            $countNonText = 0
+            for ($i = 0; $i -lt $bytesRead; $i++) {
+                if ($buffer[$i] -lt 32 -and $buffer[$i] -notin 9,10,13) { 
+                    $countNonText++ 
+                }
+            }
+            return ($countNonText / $bytesRead -gt 0.1)
+        }
+        finally {
+            $fs.Close()
+            $fs.Dispose()
+        }
+    }
+    catch {
+        Write-Information "Warning: Could not check if binary: $FilePath" -InformationAction Continue
+        return $true
+    }
+}
+
 function Copy-DirectoryContent {
     <#
     .SYNOPSIS
-        Collects file contents from a directory (and subdirectories),
-        while showing progress in a console window. Includes file size limits,
-        binary file detection, and sensitive data masking.
+    Copies the contents of a directory to the clipboard with LLM token estimation.
 
     .DESCRIPTION
-        This function will:
-        1. Prompt for max file size (default 1000 KB)
-        2. Prompt for dotfile inclusion
-        3. Skip common ignored directories/files
-        4. Skip binary files
-        5. Skip oversized files
-        6. Mask sensitive data
-        7. Copy content to clipboard
-        8. Show detailed statistics
+    This function copies the contents of a directory to the clipboard, while estimating
+    the number of LLM tokens that would be used. It can filter out binary files,
+    large files, and provides options for handling dotfiles.
 
     .PARAMETER Path
-        The directory to process.
+    The path to the directory to copy.
 
     .PARAMETER MaxSizeKB
-        Maximum file size in KB to include. Default is 1000 KB.
+    The maximum file size in KB to include in the copy. Default is 1000 KB.
 
     .PARAMETER IncludeDotfiles
-        Whether to include dotfiles (hidden files and configuration files).
+    Whether to include dotfiles in the copy. Default is true.
 
-    .OUTPUTS
-        System.String
-        The collected content that was copied to clipboard.
+    .EXAMPLE
+    Copy-DirectoryContent -Path "C:\MyProject" -MaxSizeKB 500 -IncludeDotfiles $false
+
+    .NOTES
+    Author: Nathaniel Currier
+    Copyright: (c) 2025 Nathaniel Currier
+    License: MIT
     #>
-    [CmdletBinding()]
-    [OutputType([System.String])]
     param (
         [Parameter(Mandatory=$true)]
         [string]$Path,
@@ -118,7 +155,7 @@ function Copy-DirectoryContent {
         [int]$MaxSizeKB = 1000,
 
         [Parameter(Mandatory=$false)]
-        [bool]$IncludeDotfiles = $false
+        [bool]$IncludeDotfiles = $true
     )
 
     # If parameters aren't provided, prompt for them
@@ -198,77 +235,31 @@ function Copy-DirectoryContent {
     }
 
     # Sensitive data patterns
-    $sensitivePatterns = @(
-        '(?i)(password\s*[:=]\s*[''"]?[^''"}\s]+[''"]?)',
-        '(?i)(api[-_]?key\s*[:=]\s*[''"]?[^''"}\s]+[''"]?)',
-        '(?i)(secret\s*[:=]\s*[''"]?[^''"}\s]+[''"]?)',
-        '(?i)(token\s*[:=]\s*[''"]?[^''"}\s]+[''"]?)',
-        '(?i)(private[-_]?key\s*[:=]\s*[''"]?[^''"}\s]+[''"]?)',
-        '(?i)(aws_access_key_id\s*=\s*[''"]?[^''"}\s]+[''"]?)',
-        '(?i)(aws_secret_access_key\s*=\s*[''"]?[^''"}\s]+[''"]?)',
-        '(?i)(database_url\s*=\s*[''"]?[^''"}\s]+[''"]?)',
-        '(?i)(client_secret\s*[:=]\s*[''"]?[^''"}\s]+[''"]?)',
-        '(?i)(access_token\s*[:=]\s*[''"]?[^''"}\s]+[''"]?)',
-        '(?i)(connectionstring\s*[:=]\s*[''"]?[^''"}\s]+[''"]?)',
-        '(?i)(jwt\s*[:=]\s*[''"]?[^''"}\s]+[''"]?)'
-    )
-
-    # Helper functions
-    function ShouldSkip {
-        param ([string]$FilePath)
-        
-        # Check extension first (faster)
-        $extension = [System.IO.Path]::GetExtension($FilePath).ToLower()
-        $binaryExtensions = @('.exe', '.dll', '.pdb', '.zip', '.rar', '.7z', '.tar', '.gz', '.iso', 
-                             '.bin', '.dat', '.db', '.sqlite', '.mdf', '.bak', '.png', '.jpg', 
-                             '.jpeg', '.gif', '.bmp', '.ico', '.pdf', '.doc', '.docx', '.xls', 
-                             '.xlsx', '.ppt', '.pptx')
-        
-        if ($binaryExtensions -contains $extension) { return $true }
-        
-        foreach ($pattern in $ignorePatterns) {
-            if ($FilePath -like "*$pattern*") { return $true }
-        }
-        return $false
-    }
-
-    function IsLikelyBinaryFile {
-        param ([string]$FilePath)
-        $maxBytesToCheck = 512
-        $buffer = New-Object Byte[] $maxBytesToCheck
-        
-        try {
-            $fs = [System.IO.File]::OpenRead($FilePath)
-            try {
-                $bytesRead = $fs.Read($buffer, 0, $buffer.Length)
-                $countNonText = 0
-                for ($i = 0; $i -lt $bytesRead; $i++) {
-                    if ($buffer[$i] -lt 32 -and $buffer[$i] -notin 9,10,13) { $countNonText++ }
-                }
-                return ($countNonText / $bytesRead -gt 0.1)
-            }
-            finally {
-                $fs.Close()
-                $fs.Dispose()
-            }
-        }
-        catch {
-            Write-Information "Warning: Could not check if binary: $FilePath" -InformationAction Continue
-            return $true
-        }
-    }
-
     function MaskSensitiveData {
-        param ([string]$Content)
-        foreach ($pattern in $sensitivePatterns) {
-            $Content = [System.Text.RegularExpressions.Regex]::Replace(
-                $Content, 
-                $pattern, 
-                '<REDACTED>', 
-                [System.Text.RegularExpressions.RegexOptions]::IgnoreCase
-            )
+        param (
+            [Parameter(Mandatory=$true)]
+            [string]$Text
+        )
+
+        $patterns = @(
+            # API Keys and Tokens
+            '(?i)(api[_-]?key|token|secret)["\s]*[:=]\s*["]*([^"\s]+)["]*',
+            # Passwords
+            '(?i)(password|passwd|pwd)["\s]*[:=]\s*["]*([^"\s]+)["]*',
+            # AWS Keys
+            '(?i)(aws[_-]?access[_-]?key[_-]?id|aws[_-]?secret[_-]?access[_-]?key)["\s]*[:=]\s*["]*([^"\s]+)["]*',
+            # Database URLs
+            '(?i)(jdbc:|\w+://)([^:]+):([^@]+)@',
+            # Email addresses
+            '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+        )
+
+        $maskedText = $Text
+        foreach ($pattern in $patterns) {
+            $maskedText = $maskedText -replace $pattern, '$1=<REDACTED>'
         }
-        return $Content
+
+        return $maskedText
     }
 
     # Validate directory
@@ -285,7 +276,7 @@ function Copy-DirectoryContent {
         Write-Verbose "Found $($stats.TotalFiles) files to process..."
         if ($stats.TotalFiles -eq 0) {
             Write-Information "No files found in directory." -InformationAction Continue
-            return
+            return $content
         }
         foreach ($file in $files) {
             $stats.ProcessedFiles++
@@ -299,7 +290,7 @@ function Copy-DirectoryContent {
                 continue
             }
             # Skip binary files
-            if (IsLikelyBinaryFile $file.FullName) {
+            if (Test-IsBinaryFile $file.FullName) {
                 $stats.BinaryFiles++
                 $stats.SkippedFiles++
                 continue
@@ -314,7 +305,7 @@ function Copy-DirectoryContent {
                 if ($null -eq $fileContent) { $fileContent = "" }
                 $fileContent = MaskSensitiveData $fileContent
                 $relativePath = $file.FullName.Substring($Path.Length + 1)
-                $content += "`n`nFile: $relativePath`n$fileContent"
+                $content += "`nFile: $relativePath`n$fileContent"
             }
             catch {
                 Write-Information "Error reading file: $($file.FullName)" -InformationAction Continue
@@ -324,10 +315,11 @@ function Copy-DirectoryContent {
             }
         }
         Write-Progress -Activity "Processing Files" -Completed
+        return $content
     }
     catch {
         Write-Error "Error accessing directory: $($_.Exception.Message)"
-        return
+        return $content
     }
 
     # Copy to clipboard
