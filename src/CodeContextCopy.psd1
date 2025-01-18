@@ -1,5 +1,5 @@
 @{
-    ModuleVersion = '1.4.0'
+    ModuleVersion = '1.4.1'
     GUID = '12345678-1234-5678-1234-567812345678'
     Author = 'Nathaniel Currier'
     CompanyName = 'nat.io'
@@ -17,6 +17,10 @@
             LicenseUri = 'https://github.com/ncurrier/CodeContextCopy/blob/main/LICENSE'
             ProjectUri = 'https://github.com/ncurrier/CodeContextCopy'
             ReleaseNotes = @'
+## [1.4.1] - 2025-01-18
+- Added automatic window closing after operation completion
+- Improved user experience with cleaner process termination
+
 ## [1.4.0] - 2025-01-18
 - Added clear file delimiters in output for better readability
 - Added both full and relative paths for each file in output

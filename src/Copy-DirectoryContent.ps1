@@ -342,12 +342,17 @@ Content has been copied to clipboard.
 Test by pasting in your desired location.
 "@
 
-            # Display message box
+            # Display message box and exit
             $null = [Microsoft.VisualBasic.Interaction]::MsgBox(
                 $message,
                 [Microsoft.VisualBasic.MsgBoxStyle]::Information,
                 "Operation Complete"
             )
+            
+            # Exit if running in a separate window
+            if ($Host.Name -eq 'ConsoleHost' -and $Host.UI.RawUI.WindowTitle -match 'PowerShell') {
+                [System.Environment]::Exit(0)
+            }
         }
         catch {
             Write-Error "Error copying to clipboard: $($_.Exception.Message)"
