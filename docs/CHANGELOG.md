@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2025-01-18
+
+### Added
+- Added clear file delimiters in output for better readability
+- Added both full and relative paths for each file in output
+- Added proper UTF-8 encoding handling for special characters
+
+### Changed
+- Improved file content formatting and clipboard output
+- Enhanced error handling and progress display
+- Fixed all PSScriptAnalyzer issues and code style
+- Improved handling of already redacted content
+- Enhanced file encoding with explicit UTF-8 support
+
+### Fixed
+- Fixed content building to properly format file content
+- Fixed message box display issues
+- Fixed character encoding issues with special characters
+- Removed trailing whitespace throughout codebase
+
 ## [1.3.0] - 2025-01-18
 
 ### Added

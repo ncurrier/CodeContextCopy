@@ -256,8 +256,16 @@ function Copy-DirectoryContent {
             }
 
             try {
-                $fileContent = Get-Content -Path $file.FullName -Raw -ErrorAction Stop
-                if ($null -eq $fileContent) { $fileContent = "" }
+                # Read file with UTF-8 encoding
+                $fileContent = Get-Content -Path $file.FullName -Raw -Encoding UTF8 -ErrorAction Stop
+                if ($null -eq $fileContent) {
+                    $fileContent = ""
+                }
+                else {
+                    # Convert any non-UTF8 characters to their proper UTF-8 representation
+                    $bytes = [System.Text.Encoding]::Default.GetBytes($fileContent)
+                    $fileContent = [System.Text.Encoding]::UTF8.GetString($bytes)
+                }
                 # Only mask content if it's not already marked as redacted
                 if (-not $fileContent.Contains("<REDACTED>")) {
                     $fileContent = MaskSensitiveData $fileContent
@@ -267,7 +275,7 @@ function Copy-DirectoryContent {
                 $content += "`n$delimiter`nFile: $($file.FullName)`nRelative Path: $relativePath`n$delimiter`n$fileContent`n"
             }
             catch {
-                Write-Warning "Error reading file: $($file.FullName)"
+                Write-Warning "Error reading file: $($file.FullName) - $($_.Exception.Message)"
                 $stats.EncodingErrors++
                 $stats.SkippedFiles++
                 continue
